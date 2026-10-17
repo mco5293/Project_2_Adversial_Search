@@ -41,6 +41,9 @@ class Board:
         self.first_move: Symbol = Symbol.CIRCLE
         self.turn: Symbol = self.first_move
 
+        self.bonus_square = None
+        self.bonus_connection = []
+
     def get_win_conditions(self) -> list[list[Square]]:
         """Get all winning connections, for all board sizes
 
@@ -186,6 +189,22 @@ class Board:
             return True
         return False
 
+    def can_make_line(self, symbol):
+
+        for move in self.empty_squares:
+
+            self.push(move, symbol)
+
+            connection = self.get_connection()
+
+            if connection and self.square_value(connection[0]) == symbol:
+                self.undo(move)
+                return True
+
+            self.undo(move)
+
+        return False
+
     def winner(self) -> Optional[Symbol]:
         """Get the winner of the match
 
@@ -195,10 +214,19 @@ class Board:
         connection = self.get_connection()
         if len(connection) == 0:
             return None
-        elif self.square_value(connection[0]) == Symbol.CIRCLE:
-            return Symbol.CIRCLE
-        else:
-            return Symbol.CROSS
+
+        connector = self.square_value(connection[0])
+
+        bonus = (
+            Symbol.CIRCLE
+            if connector == Symbol.CROSS
+            else Symbol.CROSS
+        )
+
+        if self.can_make_line(bonus):
+            return bonus
+
+        return connector
 
     def is_gameover(self) -> bool:
         """Check for gameover
